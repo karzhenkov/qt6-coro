@@ -3,6 +3,7 @@
 #include "Context.h"
 #include <QFuture>
 #include <QPromise>
+#include <QObject>
 #include <optional>
 
 namespace coro {
@@ -87,6 +88,12 @@ bool hasResult(const QFuture<T>& future)
 template <typename T>
 bool isReady(const QFuture<T>& future) { return hasResult(future) || hasException(future); }
 
+QObject* threadingContext()
+{
+  static thread_local QObject object;
+  return &object;
+}
+
 }  // namespace detail
 
 auto optional(QFuture<void> future)
@@ -140,13 +147,14 @@ auto operator co_await(const QFuture<Res>& future)
 
       _self.reset(this, [](auto) {});
       std::weak_ptr self(_self);
+      QObject* threadingContext = coro::detail::threadingContext();
 
       _future
-          .then([=](QFuture<Res>) {
+          .then(threadingContext, [=](QFuture<Res>) {
             if (self.lock())
               coro.resume();
           })
-          .onCanceled([=] {
+          .onCanceled(threadingContext, [=] {
             if (self.lock())
               coro.destroy();
           });
