@@ -98,7 +98,3 @@ The library doesn't contain any separately compiled code and depends only on `Qt
 
 - Qt 6
 - A compiler supporting C++20 coroutines and concepts (e.g. GCC 11 or MSVC 2022)
-
-## Limitations
-
-`QFuture` specializations with move-only result types are not supported yet.

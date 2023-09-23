@@ -2,7 +2,7 @@
 
 #include "Context.h"
 #include <QFuture>
-#include <QPromise>
+#include <QFutureInterface>
 #include <QObject>
 #include <optional>
 
@@ -10,12 +10,20 @@ namespace coro {
 namespace detail {
 
 template <typename Res>
+class FutureInterface : public QFutureInterface<Res>
+{
+public:
+  using QFutureInterfaceBase::runContinuation;
+  using QFutureInterfaceBase::cleanContinuation;
+};
+
+template <typename Res>
 struct Promise;
 
 template <typename Res>
 struct PromiseBase : PromiseChainItem
 {
-  QPromise<Res> _promise;
+  FutureInterface<Res> _promise;
   bool _finished = false;
 
   PromiseBase() = default;
@@ -29,7 +37,16 @@ struct PromiseBase : PromiseChainItem
   ~PromiseBase()
   {
     if (_finished)
-      _promise.finish();
+    {
+      _promise.reportFinished();
+    }
+    else
+    {
+      _promise.cancelAndFinish();
+      _promise.runContinuation();
+    }
+
+    _promise.cleanContinuation();
   }
 
   auto get_return_object()
@@ -38,13 +55,13 @@ struct PromiseBase : PromiseChainItem
     auto& self = *static_cast<Self*>(this);
     _thisCoro = std::coroutine_handle<Self>::from_promise(self);
 
-    _promise.start();
+    _promise.reportStarted();
     return _promise.future();
   }
 
   void unhandled_exception()
   {
-    _promise.setException(std::current_exception());
+    _promise.reportException(std::current_exception());
     _finished = true;
   }
 
@@ -60,7 +77,7 @@ struct Promise : PromiseBase<Res>
   template <typename R>
   void return_value(R&& res)
   {
-    this->_promise.addResult(static_cast<R&&>(res));
+    this->_promise.reportResult(static_cast<R&&>(res));
     this->_finished = true;
   }
 };
@@ -133,8 +150,10 @@ auto operator co_await(const QFuture<Res>& future)
     {
       if constexpr (std::is_same_v<Res, void>)
         _future.waitForFinished();
-      else
+      else if constexpr (std::is_copy_constructible_v<Res>)
         return _future.result();
+      else
+        return _future.takeResult();
     }
 
     void await_suspend(std::coroutine_handle<> coro)
