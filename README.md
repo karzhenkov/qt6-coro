@@ -44,7 +44,8 @@ This example and also a more elaborated TCP example can be found it the "example
 - Everything here is about `co_await`/`co_return` only.
   The keyword `co_yield` is not covered.
 
-- A coroutine is executed within a single thread.
+- A coroutine is executed within the thread where it was started.
+  In general, Qt event loop is required to run continuations.
 
 - Return object of a coroutine function is `QFuture`.
 

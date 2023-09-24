@@ -105,6 +105,7 @@ bool hasResult(const QFuture<T>& future)
 template <typename T>
 bool isReady(const QFuture<T>& future) { return hasResult(future) || hasException(future); }
 
+inline
 QObject* threadingContext()
 {
   static thread_local QObject object;
@@ -113,6 +114,7 @@ QObject* threadingContext()
 
 }  // namespace detail
 
+inline
 auto optional(QFuture<void> future)
 {
   return future
@@ -126,6 +128,12 @@ auto optional(QFuture<T> future)
   return future
     .then([](T v) { return std::optional<T>(std::move(v)); })
     .onCanceled([] { return std::nullopt; });
+}
+
+inline
+auto whenCompletedOrCanceled(QFuture<void> future)
+{
+  return future.onCanceled([] {});
 }
 
 }  // namespace coro
