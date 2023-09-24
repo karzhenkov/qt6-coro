@@ -4,10 +4,8 @@
 #include <QFuture>
 #include <QFutureInterface>
 #include <QObject>
-#include <optional>
 
-namespace coro {
-namespace detail {
+namespace coro::detail {
 
 template <typename Res>
 class FutureInterface : public QFutureInterface<Res>
@@ -112,31 +110,7 @@ QObject* threadingContext()
   return &object;
 }
 
-}  // namespace detail
-
-inline
-auto optional(QFuture<void> future)
-{
-  return future
-    .then([] { return true; })
-    .onCanceled([] { return false; });
-}
-
-template <typename T>
-auto optional(QFuture<T> future)
-{
-  return future
-    .then([](T v) { return std::optional<T>(std::move(v)); })
-    .onCanceled([] { return std::nullopt; });
-}
-
-inline
-auto whenCompletedOrCanceled(QFuture<void> future)
-{
-  return future.onCanceled([] {});
-}
-
-}  // namespace coro
+}  // namespace coro::detail
 
 template <typename Res>
 auto operator co_await(const QFuture<Res>& future)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coro/Utils.h"
 #include <QObject>
 #include <concepts>
 #include <tuple>
@@ -25,11 +26,11 @@ struct SigResult<>
   using type = void;
 };
 
-template <auto>
+template <auto, bool Opt>
 class Signal;
 
-template <std::derived_from<QObject> T, typename... SigArgs, void (T::*SigFunc)(SigArgs...)>
-class Signal<SigFunc>
+template <bool Opt, std::derived_from<QObject> T, typename... SigArgs, void (T::*SigFunc)(SigArgs...)>
+class Signal<SigFunc, Opt>
 {
 public:
   auto operator()(T* sender, const QObject* receiver) const
@@ -52,7 +53,10 @@ public:
       QObject::connect(sender, SigFunc, receiver, std::move(sigHandler));
     }
 
-    return future;
+    if constexpr(Opt)
+      return optional(future);
+    else
+      return future;
   }
 
   auto operator()(T& sender, const QObject* receiver) const
@@ -69,6 +73,9 @@ public:
 }  // namespace detail
 
 template <auto SigFunc>
-constexpr detail::Signal<SigFunc> connect;
+constexpr detail::Signal<SigFunc, false> connect;
+
+template <auto SigFunc>
+constexpr detail::Signal<SigFunc, true> connectOpt;
 
 }  // namespace coro

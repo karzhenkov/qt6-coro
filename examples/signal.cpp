@@ -1,5 +1,6 @@
 #include "coro/Future.h"
 #include "coro/Signal.h"
+#include "coro/TimedReceiver.h"
 #include <QCoreApplication>
 #include <QTimer>
 
@@ -55,15 +56,13 @@ QFuture<void> run()
   co_await coro::connect<&Sender::s0>(sender);
   qInfo() << "Sender::s0 again";
 
-  QPointer receiver(new QObject);
-  QTimer::singleShot(11000, [receiver] { delete receiver; });
+  coro::TimedReceiver receiver(11000);
 
   int count = 0;
-  while (true)
-  {
-    co_await coro::connect<&Sender::s0>(sender, receiver);
+  while (co_await coro::connectOpt<&Sender::s0>(sender, receiver))
     qInfo() << "Sender::s0 loop" << ++count;
-  }
+
+  qInfo() << "done";
 }
 
 int main(int argc, char** argv)

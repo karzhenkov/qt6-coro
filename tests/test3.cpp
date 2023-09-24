@@ -1,4 +1,5 @@
 #include "coro/Future.h"
+#include "coro/Utils.h"
 #include <QScopeGuard>
 #include <QTest>
 #include <vector>

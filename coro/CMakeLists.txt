@@ -5,6 +5,8 @@ target_sources(coro PRIVATE
   include/coro/Delay.h
   include/coro/Future.h
   include/coro/Signal.h
+  include/coro/Utils.h
+  include/coro/TimedReceiver.h
 )
 
 target_include_directories(coro INTERFACE include)
