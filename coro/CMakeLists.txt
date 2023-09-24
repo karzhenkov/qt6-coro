@@ -4,6 +4,7 @@ target_sources(coro PRIVATE
   include/coro/Context.h
   include/coro/Delay.h
   include/coro/Future.h
+  include/coro/Signal.h
 )
 
 target_include_directories(coro INTERFACE include)
