@@ -2,6 +2,7 @@
 
 #include <QFuture>
 #include <optional>
+#include <coroutine>
 
 namespace coro {
 
@@ -26,5 +27,12 @@ auto whenCompletedOrCanceled(QFuture<void> future)
 {
   return future.onCanceled([] {});
 }
+
+struct Cancel
+{
+  bool await_ready() noexcept { return false; }
+  void await_resume() noexcept {}
+  void await_suspend(std::coroutine_handle<> coro) { coro.destroy(); }
+};
 
 }  // namespace coro
