@@ -7,6 +7,7 @@
 
 #include <concepts>
 #include <coroutine>
+#include <memory>
 #include <type_traits>
 
 namespace coro {
@@ -96,5 +97,17 @@ public:
   ~Context() override { detail::PromiseChainItem::destroyForContext(this); }
   const void* getCoroutineContext() const override { return this; }
 };
+
+template <ContextBase T, typename... Args>
+auto make_unique(Args&&... args)
+{
+  return std::unique_ptr<T>(new Context<T>(std::forward<Args>(args)...));
+}
+
+template <ContextBase T, typename... Args>
+auto make_shared(Args&&... args)
+{
+  return std::shared_ptr<T>(new Context<T>(std::forward<Args>(args)...));
+}
 
 }  // namespace coro

@@ -7,6 +7,7 @@ foreach(TEST_NAME
   test4
   test5
   test6
+  test7
 )
   qt_add_executable(${TEST_NAME} ${TEST_NAME}.cpp)
   add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})

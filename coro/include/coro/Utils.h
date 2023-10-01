@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QFuture>
+#include <QTimer>
 #include <optional>
 #include <coroutine>
 
@@ -33,6 +34,24 @@ struct Cancel
   bool await_ready() noexcept { return false; }
   void await_resume() noexcept {}
   void await_suspend(std::coroutine_handle<> coro) { coro.destroy(); }
+};
+
+struct Yield
+{
+  std::shared_ptr<void> _self{this, [](auto) {}};
+
+  bool await_ready() noexcept { return false; }
+
+  void await_resume() noexcept {}
+
+  void await_suspend(std::coroutine_handle<> coro)
+  {
+    std::weak_ptr self(_self);
+    QTimer::singleShot(0, [=] {
+      if (self.lock())
+        coro.resume();
+    });
+  }
 };
 
 }  // namespace coro
